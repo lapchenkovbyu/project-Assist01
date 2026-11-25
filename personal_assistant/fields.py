@@ -19,6 +19,7 @@ from typing import Any
 from personal_assistant.exceptions import ValidationError
 
 NAME_MAX_LENGTH = 50
+ADDRESS_MAX_LENGTH = 200
 PHONE_DIGITS = 10
 EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[A-Za-z]{2,}")
 DATE_FORMAT = "%d.%m.%Y"
@@ -77,11 +78,22 @@ class Name(Field):
 
 
 class Phone(Field):
-    """Phone number: digits, normalised (e.g. 10 digits)."""
+    """Phone number: digits, normalised (e.g. 10 digits).
+
+    Accepts spaces, dashes, brackets and the Ukrainian country code:
+    "(050) 123-45-67", "+380501234567" and "380501234567" all become
+    "0501234567".
+    """
 
     def validate(self, value: Any) -> str:
-        # Allow common separators like spaces, dashes, brackets: "(050) 123-45-67".
         digits = re.sub(r"[\s()\-]", "", str(value))
+        if digits.startswith("+"):
+            # Only the Ukrainian code is supported after "+".
+            if not digits.startswith("+380"):
+                raise ValidationError("Only +380 country code is supported.")
+            digits = digits[1:]
+        if digits.startswith("380") and len(digits) == PHONE_DIGITS + 2:
+            digits = digits[2:]  # "380501234567" -> "0501234567"
         if not digits.isdigit() or len(digits) != PHONE_DIGITS:
             raise ValidationError(
                 f"Phone must contain exactly {PHONE_DIGITS} digits, e.g. 0501234567."
@@ -126,10 +138,14 @@ class Birthday(Field):
 
 
 class Address(Field):
-    """Postal address: free text, non-empty."""
+    """Postal address: free text, non-empty, length limit."""
 
     def validate(self, value: Any) -> str:
         address = str(value).strip()
         if not address:
             raise ValidationError("Address cannot be empty.")
+        if len(address) > ADDRESS_MAX_LENGTH:
+            raise ValidationError(
+                f"Address is too long (max {ADDRESS_MAX_LENGTH} characters)."
+            )
         return address
