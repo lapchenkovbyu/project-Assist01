@@ -29,6 +29,9 @@ def test_name_invalid(bad):
         ("0501234567", "0501234567"),
         ("050 123 45 67", "0501234567"),
         ("(050)123-45-67", "0501234567"),
+        ("+380501234567", "0501234567"),
+        ("380501234567", "0501234567"),
+        ("+38 (050) 123-45-67", "0501234567"),
     ],
 )
 def test_phone_valid_and_normalised(raw, expected):
@@ -36,7 +39,7 @@ def test_phone_valid_and_normalised(raw, expected):
 
 
 @pytest.mark.parametrize(
-    "bad", ["", "12345", "050123456789", "05012abcde", "+380501234567"]
+    "bad", ["", "12345", "050123456789", "05012abcde", "+38050123456", "+1234567890"]
 )
 def test_phone_invalid(bad):
     with pytest.raises(ValidationError):
@@ -98,9 +101,10 @@ def test_address_valid():
     assert Address(" Kyiv, Khreshchatyk 1 ").value == "Kyiv, Khreshchatyk 1"
 
 
-def test_address_empty():
+@pytest.mark.parametrize("bad", ["", "   ", "x" * 201])
+def test_address_invalid(bad):
     with pytest.raises(ValidationError):
-        Address("   ")
+        Address(bad)
 
 
 # ---------- Common ----------
