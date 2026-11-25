@@ -2,6 +2,9 @@
 
 Owner: Participant 2 (Fields & validation).
 
+All validation errors raise ``ValidationError`` with a user-friendly
+message; ``input_error`` in cli.py shows it instead of crashing.
+
 ``Field`` is the base class and already works. Subclasses override
 ``validate`` which must return the normalised value or raise
 ``ValidationError``.
@@ -9,9 +12,16 @@ Owner: Participant 2 (Fields & validation).
 
 from __future__ import annotations
 
+import re
+from datetime import date, datetime
 from typing import Any
 
-from personal_assistant.exceptions import ValidationError  # noqa: F401
+from personal_assistant.exceptions import ValidationError
+
+NAME_MAX_LENGTH = 50
+PHONE_DIGITS = 10
+EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[A-Za-z]{2,}")
+DATE_FORMAT = "%d.%m.%Y"
 
 
 class Field:
@@ -56,24 +66,37 @@ class Name(Field):
     """Contact name: required, non-empty."""
 
     def validate(self, value: Any) -> str:
-        # TODO(owner #2): implement (strip, non-empty, max length)
-        raise NotImplementedError
+        name = str(value).strip()
+        if not name:
+            raise ValidationError("Name cannot be empty.")
+        if len(name) > NAME_MAX_LENGTH:
+            raise ValidationError(
+                f"Name is too long (max {NAME_MAX_LENGTH} characters)."
+            )
+        return name
 
 
 class Phone(Field):
     """Phone number: digits, normalised (e.g. 10 digits)."""
 
     def validate(self, value: Any) -> str:
-        # TODO(owner #2): implement
-        raise NotImplementedError
+        # Allow common separators like spaces, dashes, brackets: "(050) 123-45-67".
+        digits = re.sub(r"[\s()\-]", "", str(value))
+        if not digits.isdigit() or len(digits) != PHONE_DIGITS:
+            raise ValidationError(
+                f"Phone must contain exactly {PHONE_DIGITS} digits, e.g. 0501234567."
+            )
+        return digits
 
 
 class Email(Field):
     """E-mail address."""
 
     def validate(self, value: Any) -> str:
-        # TODO(owner #2): implement (regex)
-        raise NotImplementedError
+        email = str(value).strip()
+        if not EMAIL_PATTERN.fullmatch(email):
+            raise ValidationError("Invalid e-mail. Example: name@example.com")
+        return email.lower()
 
 
 class Birthday(Field):
@@ -83,13 +106,30 @@ class Birthday(Field):
     """
 
     def validate(self, value: Any) -> Any:
-        # TODO(owner #2): implement (strptime, not in future)
-        raise NotImplementedError
+        if isinstance(value, datetime):
+            birthday = value.date()
+        elif isinstance(value, date):
+            birthday = value
+        else:
+            try:
+                birthday = datetime.strptime(str(value).strip(), DATE_FORMAT).date()
+            except ValueError as err:
+                raise ValidationError(
+                    "Invalid date. Use DD.MM.YYYY, e.g. 23.01.1990."
+                ) from err
+        if birthday > date.today():
+            raise ValidationError("Birthday cannot be in the future.")
+        return birthday
+
+    def __str__(self) -> str:
+        return self._value.strftime(DATE_FORMAT)
 
 
 class Address(Field):
     """Postal address: free text, non-empty."""
 
     def validate(self, value: Any) -> str:
-        # TODO(owner #2): implement
-        raise NotImplementedError
+        address = str(value).strip()
+        if not address:
+            raise ValidationError("Address cannot be empty.")
+        return address
