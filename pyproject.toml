@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal-assistant"
+version = "0.1.0"
+description = "Personal assistant CLI: address book and notes with tags"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "black>=24", "flake8>=7", "pre-commit>=3"]
+
+[project.scripts]
+assistant = "personal_assistant.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["personal_assistant*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
