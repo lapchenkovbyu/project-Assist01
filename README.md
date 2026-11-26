@@ -65,15 +65,20 @@ tests/            pytest; заглушки позначені skip
 
 ## Team & ownership
 
-| # | Учасник | Роль | Відповідальність |
-|---|---------|------|------------------|
-| 1 | Учасник 1 | Team Lead | skeleton, `storage.py`, пакування, lint, code review |
-| 2 | Учасник 2 | Developer | `fields.py`, `exceptions.py`, тести валідації |
-| 3 | Учасник 3 | Developer | `contacts.py`: Record, AddressBook, пошук, дні народження |
-| 4 | Учасник 4 | Developer | `notes.py`: Note, NoteBook, теги, пошук, сортування |
-| 5 | Учасник 5 | Scrum Master | `cli.py`: цикл, диспетчер, `input_error`, help, таблиці, підказки команд |
+| # | Учасник | GitHub | Роль | Відповідальність |
+|---|---------|--------|------|------------------|
+| 1 | Богдан Лапченков | [@lapchenkovbyu](https://github.com/lapchenkovbyu) | Team Lead, Scrum Master | skeleton, `storage.py`, пакування, lint, CI, code review, stand-up |
+| 2 | Сергій | [@serhii-spec](https://github.com/serhii-spec) | Developer | `fields.py`, `exceptions.py`, тести валідації |
+| 3 | Едуард | [@gracefeel](https://github.com/gracefeel) | Developer | `contacts.py`: Record, AddressBook, пошук, дні народження |
+| 4 | Ярослава | [@YaroslavaLevchenko](https://github.com/YaroslavaLevchenko) | Developer | `notes.py`: Note, NoteBook, теги, пошук, сортування |
+| 5 | Олександр Білоконь | — | Developer | `cli.py`: команди, `input_error`, help, таблиці, підказки команд |
 
 Місця для роботи позначені `# TODO(owner #N)`.
+
+Задачі: Trello-дошка
+[Personal Assistant](https://trello.com/b/p3YuCFwj/personal-assistant).
+Картки підписані `[P<N> Ім'я]`; беріть картку, переносьте в
+In Progress → Code Review → Done разом зі своїм PR.
 
 ## Git workflow
 
