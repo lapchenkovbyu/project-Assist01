@@ -21,8 +21,15 @@ from personal_assistant.exceptions import ValidationError
 NAME_MAX_LENGTH = 50
 ADDRESS_MAX_LENGTH = 200
 PHONE_DIGITS = 10
-EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[A-Za-z]{2,}")
+PHONE_PATTERN = re.compile(r"[0-9]{%d}" % PHONE_DIGITS)  # ASCII digits only
+# Local part: letters, digits, "_%+-" and single dots (not at the edges).
+# Domain: labels of letters/digits/hyphens, no hyphen at a label's edges.
+EMAIL_PATTERN = re.compile(
+    r"[A-Za-z0-9_%+-]+(\.[A-Za-z0-9_%+-]+)*"
+    r"@([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}"
+)
 DATE_FORMAT = "%d.%m.%Y"
+MIN_BIRTH_YEAR = 1900
 
 
 class Field:
@@ -39,6 +46,8 @@ class Field:
 
     @value.setter
     def value(self, new_value: Any) -> None:
+        if new_value is None:
+            raise ValidationError(f"{type(self).__name__} is required.")
         self._value = self.validate(new_value)
 
     def validate(self, value: Any) -> Any:
@@ -64,12 +73,14 @@ class Field:
 
 
 class Name(Field):
-    """Contact name: required, non-empty."""
+    """Contact name: required, non-empty, contains at least one letter."""
 
     def validate(self, value: Any) -> str:
         name = str(value).strip()
         if not name:
             raise ValidationError("Name cannot be empty.")
+        if not any(char.isalpha() for char in name):
+            raise ValidationError("Name must contain at least one letter.")
         if len(name) > NAME_MAX_LENGTH:
             raise ValidationError(
                 f"Name is too long (max {NAME_MAX_LENGTH} characters)."
@@ -94,7 +105,7 @@ class Phone(Field):
             digits = digits[1:]
         if digits.startswith("380") and len(digits) == PHONE_DIGITS + 2:
             digits = digits[2:]  # "380501234567" -> "0501234567"
-        if not digits.isdigit() or len(digits) != PHONE_DIGITS:
+        if not PHONE_PATTERN.fullmatch(digits):
             raise ValidationError(
                 f"Phone must contain exactly {PHONE_DIGITS} digits, e.g. 0501234567."
             )
@@ -112,7 +123,7 @@ class Email(Field):
 
 
 class Birthday(Field):
-    """Birthday in DD.MM.YYYY format, not in the future.
+    """Birthday in DD.MM.YYYY format, from 1900 and not in the future.
 
     ``value`` holds a ``datetime.date``.
     """
@@ -131,6 +142,8 @@ class Birthday(Field):
                 ) from err
         if birthday > date.today():
             raise ValidationError("Birthday cannot be in the future.")
+        if birthday.year < MIN_BIRTH_YEAR:
+            raise ValidationError(f"Birthday year must be {MIN_BIRTH_YEAR} or later.")
         return birthday
 
     def __str__(self) -> str:
